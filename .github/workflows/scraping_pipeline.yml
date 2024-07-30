@@ -1,0 +1,53 @@
+
+name: Run Main.py with Selenium
+
+on:
+  schedule:
+    - cron: '0 23 * * *'  # This runs at 11 UTC every day = midnight WAT
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    services:
+      selenium-hub:
+        image: selenium/hub:4.0.0
+        ports:
+          - 4444:4444
+        options: >-
+          --network selenium-net
+          --name selenium-hub
+
+      chrome:
+        image: selenium/node-chrome:4.0.0
+        ports:
+          - 5900:5900
+        options: >-
+          --network selenium-net
+          --name chrome
+        env:
+          HUB_HOST: selenium-hub
+          HUB_PORT: 4444
+        depends_on:
+          - selenium-hub
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+
+      - name: Build Docker image
+        run: |
+          docker build -t my-python-app .
+
+      - name: Run Docker container
+        run: |
+          docker run --network selenium-net my-python-app
