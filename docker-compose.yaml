@@ -1,0 +1,42 @@
+version: "3.8"
+services:
+  selenium-hub:
+    image: selenium/hub:4.0.0
+    container_name: selenium-hub
+    ports:
+      - "4444:4444"
+    networks:
+      - selenium-net
+
+  chrome:
+    image: selenium/node-chrome:4.0.0
+    container_name: chrome
+    depends_on:
+      - selenium-hub
+    environment:
+      - HUB_HOST=selenium-hub
+      - HUB_PORT=4444
+      - NODE_MAX_SESSION=1
+      - NODE_MAX_INSTANCES=1
+      - SE_EVENT_BUS_HOST=selenium-hub
+      - SE_EVENT_BUS_PUBLISH_PORT=4442
+      - SE_EVENT_BUS_SUBSCRIBE_PORT=4443
+      - NODE_SESSION_TIMEOUT=300
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 4G
+    networks:
+      - selenium-net
+
+networks:
+  selenium-net:
+    name: selenium-net
+    driver: bridge
+
+
+
+# docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' selenium-hub : get ip of selenium hub
+# docker exec -it chrome curl -I http://selenium-hub:4444 => verify connectivity
+# the script should run inside the docker container.
